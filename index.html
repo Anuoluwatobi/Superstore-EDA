@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:title"
+          content="Superstore EDA: What $138K in Hidden Profit Looks Like">
+    <meta property="og:description"
+          content="A full exploratory data analysis of retail profitability,
+                   built through human-AI collaboration.">
+    <title>Superstore EDA | Profitability Analysis</title>
+    <style>
+        /* ── GLOBAL RESET & FONTS ─────────────────────── */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0f1117;
+            color: #e8eaf0;
+            line-height: 1.7;
+        }
+
+        /* ── NAVIGATION ───────────────────────────────── */
+        nav {
+            position: sticky;
+            top: 0;
+            background: rgba(15, 17, 23, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #2a2d3a;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        nav .logo {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #4f9cf9;
+            letter-spacing: 0.05em;
+        }
+
+        nav ul {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        nav ul a {
+            color: #9ca3af;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.2s;
+        }
+
+        nav ul a:hover { color: #4f9cf9; }
+
+        /* ── HERO SECTION ─────────────────────────────── */
+        .hero {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 4rem 2rem;
+            background: radial-gradient(
+                ellipse at 50% 0%,
+                rgba(79, 156, 249, 0.15) 0%,
+                transparent 70%
+            );
+            border-bottom: 1px solid #2a2d3a;
+        }
+
+        .hero-badge {
+            background: rgba(79, 156, 249, 0.15);
+            border: 1px solid rgba(79, 156, 249, 0.3);
+            color: #4f9cf9;
+            padding: 0.4rem 1.2rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            max-width: 800px;
+        }
+
+        .hero h1 span { color: #4f9cf9; }
+
+        .hero p {
+            font-size: 1.1rem;
+            color: #9ca3af;
+            max-width: 600px;
+            margin-bottom: 3rem;
+        }
+
+        /* ── STAT CARDS ───────────────────────────────── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .stat-card {
+            background: #1a1d27;
+            border: 1px solid #2a2d3a;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+
+        .stat-card:hover { border-color: #4f9cf9; }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #4f9cf9;
+            display: block;
+        }
+
+        .stat-card .label {
+            font-size: 0.8rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.25rem;
+        }
+
+        /* ── SECTION LAYOUT ───────────────────────────── */
+        section {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 5rem 2rem;
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #4f9cf9;
+            margin-bottom: 0.75rem;
+        }
+
+        h2 {
+            font-size: clamp(1.5rem, 3vw, 2.2rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .section-intro {
+            color: #9ca3af;
+            font-size: 1.05rem;
+            max-width: 700px;
+            margin-bottom: 3rem;
+        }
+
+        /* ── EXECUTIVE SUMMARY ────────────────────────── */
+        .exec-summary {
+            background: linear-gradient(
+                135deg,
+                rgba(79, 156, 249, 0.08),
+                rgba(79, 156, 249, 0.02)
+            );
+            border: 1px solid rgba(79, 156, 249, 0.2);
+            border-radius: 16px;
+            padding: 2.5rem;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #d1d5db;
+        }
+
+        /* ── FINDINGS GRID ────────────────────────────── */
+        .findings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .finding-card {
+            background: #1a1d27;
+            border: 1px solid #2a2d3a;
+            border-radius: 16px;
+            padding: 2rem;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .finding-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(79, 156, 249, 0.4);
+        }
+
+        .finding-card .bq-tag {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #4f9cf9;
+            margin-bottom: 0.75rem;
+        }
+
+        .finding-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: #f3f4f6;
+        }
+
+        .finding-card p {
+            font-size: 0.9rem;
+            color: #9ca3af;
+            margin-bottom: 1rem;
+        }
+
+        .finding-card .key-number {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #4f9cf9;
+        }
+
+        .finding-card .key-number-label {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        /* ── CHART SHOWCASE ───────────────────────────── */
+        .chart-showcase {
+            background: #1a1d27;
+            border: 1px solid #2a2d3a;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .chart-showcase img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .chart-caption {
+            padding: 1rem 1.5rem;
+            font-size: 0.85rem;
+            color: #6b7280;
+            border-top: 1px solid #2a2d3a;
+        }
+
+        /* ── RECOMMENDATIONS ──────────────────────────── */
+        .rec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .rec-card {
+            background: #1a1d27;
+            border-left: 3px solid #4f9cf9;
+            border-radius: 0 12px 12px 0;
+            padding: 1.5rem;
+        }
+
+        .rec-card .priority {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #4f9cf9;
+            margin-bottom: 0.5rem;
+        }
+
+        .rec-card h4 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .rec-card p {
+            font-size: 0.875rem;
+            color: #9ca3af;
+        }
+
+        /* ── AI COLLABORATION SECTION ─────────────────── */
+        .collab-section {
+            background: linear-gradient(
+                135deg,
+                rgba(139, 92, 246, 0.08),
+                rgba(79, 156, 249, 0.05)
+            );
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 20px;
+            padding: 3rem;
+        }
+
+        .collab-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 640px) {
+            .collab-grid { grid-template-columns: 1fr; }
+        }
+
+        .collab-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .collab-card h4 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 1rem;
+            color: #a78bfa;
+        }
+
+        .collab-card ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .collab-card ul li {
+            font-size: 0.9rem;
+            color: #d1d5db;
+            padding-left: 1.2rem;
+            position: relative;
+        }
+
+        .collab-card ul li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #a78bfa;
+        }
+
+        /* ── FOOTER ───────────────────────────────────── */
+        footer {
+            border-top: 1px solid #2a2d3a;
+            padding: 3rem 2rem;
+            text-align: center;
+            color: #4b5563;
+            font-size: 0.875rem;
+        }
+
+        footer a {
+            color: #4f9cf9;
+            text-decoration: none;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid #2a2d3a;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── NAVIGATION ──────────────────────────────────────────── -->
+<nav>
+    <span class="logo">SUPERSTORE EDA</span>
+    <ul>
+        <li><a href="#findings">Findings</a></li>
+        <li><a href="#charts">Charts</a></li>
+        <li><a href="#recommendations">Actions</a></li>
+        <li><a href="#methodology">Methodology</a></li>
+    </ul>
+</nav>
+
+<!-- ── HERO ────────────────────────────────────────────────── -->
+<div class="hero">
+    <div class="hero-badge">Exploratory Data Analysis · Retail Operations</div>
+    <h1>We Found <span>$138,515</span> in<br>Hidden Recoverable Profit</h1>
+    <p>A full exploratory data analysis of the Sample Superstore dataset,
+       answering six business-critical questions that operations managers
+       and business analysts actually care about.</p>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="number">9,994</span>
+            <span class="label">Orders Analysed</span>
+        </div>
+        <div class="stat-card">
+            <span class="number">19.4%</span>
+            <span class="label">Orders at a Loss</span>
+        </div>
+        <div class="stat-card">
+            <span class="number">-0.864</span>
+            <span class="label">Discount-Margin Correlation</span>
+        </div>
+        <div class="stat-card">
+            <span class="number">96.8%</span>
+            <span class="label">Loss Rate Above 20% Discount</span>
+        </div>
+        <div class="stat-card">
+            <span class="number">64.7%</span>
+            <span class="label">Current Profit Potential</span>
+        </div>
+    </div>
+</div>
+
+<!-- ── EXECUTIVE SUMMARY ────────────────────────────────────── -->
+<section>
+    <div class="section-label">Executive Summary</div>
+    <h2>The Business Story in Two Minutes</h2>
+    <div class="exec-summary">
+        Our analysis of 9,994 orders reveals that discount behaviour is
+        the single largest threat to profitability. Currently, 19.4% of
+        all orders are loss-making, leaving the business operating at
+        64.7% of its profit potential — with $138,515 recoverable through
+        a single policy change. Orders exceeding a 20% discount threshold
+        show a 96.8% loss rate, with average margins collapsing to -108.9%.
+        The West region demonstrates this is solvable — operating at a
+        10.9% average discount against a company average of 16%, they
+        generate the highest regional profit at $108,418. We recommend
+        implementing a system-enforced 20% discount ceiling company-wide,
+        benchmarked on the West region's governance model. Simultaneously,
+        Tables and Bookcases within Furniture require sub-category specific
+        caps, with discontinuation review if margins remain negative after
+        180 days.
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── FINDINGS ─────────────────────────────────────────────── -->
+<section id="findings">
+    <div class="section-label">Six Business Questions</div>
+    <h2>What the Data Actually Tells Us</h2>
+    <p class="section-intro">
+        Each question was formed before running the analysis —
+        hypotheses first, data second.
+    </p>
+
+    <div class="findings-grid">
+        <div class="finding-card">
+            <div class="bq-tag">BQ1 · Category Profitability</div>
+            <h3>Technology Leads. Furniture Bleeds.</h3>
+            <p>Technology generates $145,455 at 15.6% margin.
+               Furniture generates only $18,451 at 3.9% —
+               with Tables alone responsible for -$17,000 in losses.</p>
+            <div class="key-number">7.9×</div>
+            <div class="key-number-label">
+                More profit from Technology than Furniture
+            </div>
+        </div>
+
+        <div class="finding-card">
+            <div class="bq-tag">BQ2 · Discount Impact</div>
+            <h3>The 20% Line Everything Crosses at Its Peril.</h3>
+            <p>Discount explains 74.6% of all profit margin variation.
+               The mathematical break-even is 21.8%.
+               Above 20%, 96.8% of orders are loss-making.</p>
+            <div class="key-number">-0.864</div>
+            <div class="key-number-label">
+                Discount vs Profit Margin correlation
+            </div>
+        </div>
+
+        <div class="finding-card">
+            <div class="bq-tag">BQ3 · Furniture Deep Dive</div>
+            <h3>Tables Is the Problem. Chairs Is the Proof.</h3>
+            <p>Chairs generates $26,000 in profit within the same
+               category. Tables loses $17,000. Same reps, same region,
+               different discount application — loss leader hypothesis
+               tested and rejected.</p>
+            <div class="key-number">26.1%</div>
+            <div class="key-number-label">
+                Average discount on Tables (cap is 20%)
+            </div>
+        </div>
+
+        <div class="finding-card">
+            <div class="bq-tag">BQ4 · Regional Efficiency</div>
+            <h3>West Is the Blueprint. Central Is the Emergency.</h3>
+            <p>West operates at 10.9% average discount and 9.9% loss
+               rate. Central averages 24% discount — already above our
+               recommended cap — with a -10.4% average order margin.</p>
+            <div class="key-number">$108,418</div>
+            <div class="key-number-label">
+                West region profit — highest in the business
+            </div>
+        </div>
+
+        <div class="finding-card">
+            <div class="bq-tag">BQ5 · Customer Segments</div>
+            <h3>Volume vs Quality — Two Different Winning Strategies.</h3>
+            <p>Consumer drives the most total profit ($134,119) through
+               volume (5,191 orders). Home Office generates the most
+               profit per customer ($407 vs $328) through category mix —
+               more Technology, less Furniture.</p>
+            <div class="key-number">$407</div>
+            <div class="key-number-label">
+                Home Office profit per customer (highest segment)
+            </div>
+        </div>
+
+        <div class="finding-card">
+            <div class="bq-tag">BQ6 · Shipping Mode</div>
+            <h3>Shipping Mode Barely Moves the Needle.</h3>
+            <p>Original hypothesis confirmed: shipping mode explains
+               only 4 percentage points of margin variation vs 143
+               points for discount. The operational focus belongs
+               on pricing policy, not logistics optimisation.</p>
+            <div class="key-number">4pp</div>
+            <div class="key-number-label">
+                Margin spread across all ship modes (discount = 143pp)
+            </div>
+        </div>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── CHARTS ───────────────────────────────────────────────── -->
+<section id="charts">
+    <div class="section-label">Visual Evidence</div>
+    <h2>The Charts That Tell the Story</h2>
+    <p class="section-intro">
+        Every chart was built to answer a specific business question —
+        not to be decorative.
+    </p>
+
+    <div class="chart-showcase">
+        <img src="phase4_discount_profitability.png"
+             alt="Discount vs Profit Margin Analysis">
+        <div class="chart-caption">
+            BQ2: The scatter plot that proved it —
+            as discount increases, profit margin collapses
+            with near-deterministic force (r = -0.864).
+            The vertical line marks the 21.8% break-even threshold.
+        </div>
+    </div>
+
+    <div class="chart-showcase">
+        <img src="phase4_category_profitability.png"
+             alt="Category Profitability Analysis">
+        <div class="chart-caption">
+            BQ1 + BQ3: Technology leads, Office Supplies holds steady,
+            Furniture struggles — and within Furniture,
+            Tables and Bookcases are responsible for nearly
+            all category-level losses.
+        </div>
+    </div>
+
+    <div class="chart-showcase">
+        <img src="phase4_regional_efficiency.png"
+             alt="Regional Efficiency Analysis">
+        <div class="chart-caption">
+            BQ4: West operates as the benchmark region.
+            Central's average order is loss-making despite
+            positive total profit — a structural fragility
+            hidden by a few high-value outlier orders.
+        </div>
+    </div>
+
+    <div class="chart-showcase">
+        <img src="phase4_correlation_heatmap.png"
+             alt="Correlation Analysis">
+        <div class="chart-caption">
+            The full correlation matrix — Pearson vs Spearman —
+            showing where outliers distort the picture and
+            where the true relationships lie.
+        </div>
+    </div>
+</section>
+
+<hr class="divider">
+
+
+    <hr class="divider">
+
+    <!-- ── HYPOTHESIS TESTING ───────────────────────────────── -->
+    <section id="hypotheses">
+        <div class="section-label">Hypothesis Testing</div>
+        <h2>What We Believed vs What the Data Said</h2>
+        <p class="section-intro">
+            Every conclusion was challenged before it was accepted.
+            Four hypotheses were formed, tested, and rejected.
+            One was confirmed. This is how the analysis 
+            arrived at its single, evidence-backed recommendation.
+        </p>
+
+        <!-- ── THE NARRATIVE ARC ──────────────────────────── -->
+        <div class="hypothesis-narrative">
+            <p>
+                We began by trying to understand <em>why</em> 
+                discounts were being applied the way they were. 
+                Then we spent the rest of the analysis trying to 
+                find ways to fix the category those discounts 
+                were destroying most. Every path led back to 
+                the same door.
+            </p>
+        </div>
+
+        <!-- ── HYPOTHESIS CARDS ───────────────────────────── -->
+        <div class="hypothesis-flow">
+
+            <!-- H1: Volume Discount -->
+            <div class="hypothesis-card rejected">
+                <div class="h-header">
+                    <span class="h-number">H1</span>
+                    <span class="h-verdict rejected-tag">
+                        ✕ Rejected
+                    </span>
+                </div>
+                <h3>Discounts Are Volume-Driven</h3>
+                <div class="h-body">
+                    <div class="h-column">
+                        <div class="h-label">What We Believed</div>
+                        <p>
+                            Customers who order more units earn 
+                            higher discounts — a standard volume 
+                            incentive model. More quantity ordered 
+                            means more discount applied.
+                        </p>
+                    </div>
+                    <div class="h-column">
+                        <div class="h-label">What the Data Said</div>
+                        <p>
+                            The Low discount band (1-10%) contained 
+                            only 94 orders out of 9,994 — less than 
+                            1% of all transactions. The Quantity vs 
+                            Discount Spearman correlation was 0.01 — 
+                            effectively zero. Discounts are applied 
+                            by individual rep behaviour, not by 
+                            volume policy.
+                        </p>
+                    </div>
+                </div>
+                <div class="h-implication">
+                    <strong>Implication:</strong> There is no 
+                    volume discount schedule to adjust. 
+                    The fix must be behavioural and structural — 
+                    a system-enforced cap, not a schedule revision.
+                </div>
+            </div>
+
+            <!-- CONNECTOR -->
+            <div class="flow-connector">
+                <div class="connector-line"></div>
+                <div class="connector-text">
+                    This led us to ask: which category 
+                    is absorbing the most discount damage?
+                </div>
+                <div class="connector-line"></div>
+            </div>
+
+            <!-- H2: Office Supplies as Loss Driver -->
+            <div class="hypothesis-card rejected">
+                <div class="h-header">
+                    <span class="h-number">H2</span>
+                    <span class="h-verdict rejected-tag">
+                        ✕ Rejected
+                    </span>
+                </div>
+                <h3>Office Supplies Is the Biggest Loss Driver</h3>
+                <div class="h-body">
+                    <div class="h-column">
+                        <div class="h-label">What We Believed</div>
+                        <p>
+                            Office Supplies are discretionary, 
+                            repeat purchases. Sales reps apply 
+                            aggressive discounts indiscriminately 
+                            to win repeat business — making 
+                            it the most loss-making category.
+                        </p>
+                    </div>
+                    <div class="h-column">
+                        <div class="h-label">What the Data Said</div>
+                        <p>
+                            Office Supplies generates $122,491 
+                            in profit at 13.8% average margin — 
+                            the most operationally stable category 
+                            with the lowest variance. Furniture 
+                            generates only $18,451 at 3.9% margin. 
+                            High natural margins on Office Supplies 
+                            absorb discount pressure. 
+                            Furniture's thin margins cannot.
+                        </p>
+                    </div>
+                </div>
+                <div class="h-implication">
+                    <strong>Implication:</strong> The problem 
+                    is not which category gets discounted most — 
+                    it is which category's margins are too thin 
+                    to survive discounting at all. 
+                    Furniture, specifically Tables and Bookcases, 
+                    became our focus.
+                </div>
+            </div>
+
+            <!-- CONNECTOR -->
+            <div class="flow-connector">
+                <div class="connector-line"></div>
+                <div class="connector-text">
+                    With Furniture confirmed as the problem,
+                    we asked: is there a strategic reason 
+                    to keep Tables despite its losses?
+                </div>
+                <div class="connector-line"></div>
+            </div>
+
+            <!-- H3: Tables Loss Leader -->
+            <div class="hypothesis-card rejected">
+                <div class="h-header">
+                    <span class="h-number">H3</span>
+                    <span class="h-verdict rejected-tag">
+                        ✕ Rejected
+                    </span>
+                </div>
+                <h3>Tables Functions as a Loss Leader</h3>
+                <div class="h-body">
+                    <div class="h-column">
+                        <div class="h-label">What We Believed</div>
+                        <p>
+                            Tables (-$17,000 annual loss) may 
+                            justify its losses by driving 
+                            co-purchases of profitable furniture 
+                            items — Chairs, Furnishings. 
+                            Selling Tables brings customers in 
+                            and generates basket value 
+                            across the category.
+                        </p>
+                    </div>
+                    <div class="h-column">
+                        <div class="h-label">What the Data Said</div>
+                        <p>
+                            Orders containing Tables showed a 
+                            17.5% co-purchase rate for other 
+                            furniture items. Orders without 
+                            Tables showed 19.3%. Tables orders 
+                            are associated with fewer 
+                            co-purchases, not more. 
+                            No cross-sell effect exists. 
+                            Tables is a standalone loss 
+                            with no strategic justification.
+                        </p>
+                    </div>
+                </div>
+                <div class="h-implication">
+                    <strong>Implication:</strong> Tables cannot 
+                    be defended on strategic grounds. 
+                    The staged intervention framework applies: 
+                    implement the 20% cap, observe for 90 days, 
+                    initiate discontinuation review if 
+                    margins remain negative at 180 days.
+                </div>
+            </div>
+
+            <!-- CONNECTOR -->
+            <div class="flow-connector">
+                <div class="connector-line"></div>
+                <div class="connector-text">
+                    With no strategic case for Tables, 
+                    we asked: could operational changes — 
+                    specifically shipping mode — 
+                    improve Furniture's margins?
+                </div>
+                <div class="connector-line"></div>
+            </div>
+
+            <!-- H4: Shipping Mode -->
+            <div class="hypothesis-card rejected">
+                <div class="h-header">
+                    <span class="h-number">H4</span>
+                    <span class="h-verdict rejected-tag">
+                        ✕ Rejected
+                    </span>
+                </div>
+                <h3>Shipping Mode Affects Profit Margins</h3>
+                <div class="h-body">
+                    <div class="h-column">
+                        <div class="h-label">What We Believed</div>
+                        <p>
+                            Different shipping modes carry 
+                            different costs. Certain modes — 
+                            particularly Same Day — may be 
+                            eroding margins through cost 
+                            absorption. Optimising shipping 
+                            mode selection could improve 
+                            category profitability, 
+                            especially for Furniture.
+                        </p>
+                    </div>
+                    <div class="h-column">
+                        <div class="h-label">What the Data Said</div>
+                        <p>
+                            The Spearman correlation between 
+                            shipping duration and profit margin 
+                            was 0.00 — literally zero. 
+                            Shipping mode explained 4 percentage 
+                            points of margin variation across 
+                            all modes. Discount explained 143. 
+                            Furniture margins held at 3-4% 
+                            regardless of which mode was used. 
+                            Shipping is not a lever 
+                            for this business's problems.
+                        </p>
+                    </div>
+                </div>
+                <div class="h-implication">
+                    <strong>Implication:</strong> The data closed 
+                    every operational path for fixing Furniture 
+                    except one. Shipping mode, volume incentives, 
+                    and loss leader strategy were all tested 
+                    and rejected. Only discount governance remained.
+                </div>
+            </div>
+
+            <!-- CONNECTOR -->
+            <div class="flow-connector">
+                <div class="connector-line"></div>
+                <div class="connector-text">
+                    With every alternative path rejected, 
+                    the data confirmed what it had been 
+                    signalling from the beginning.
+                </div>
+                <div class="connector-line"></div>
+            </div>
+
+            <!-- H5: Confirmed -->
+            <div class="hypothesis-card confirmed">
+                <div class="h-header">
+                    <span class="h-number">H5</span>
+                    <span class="h-verdict confirmed-tag">
+                        ✓ Confirmed
+                    </span>
+                </div>
+                <h3>A 20% Discount Cap Recovers Profit</h3>
+                <div class="h-body">
+                    <div class="h-column">
+                        <div class="h-label">What We Believed</div>
+                        <p>
+                            Capping discounts at 20% — just 
+                            below the mathematical break-even 
+                            of 21.8% — would eliminate the 
+                            majority of loss-making orders 
+                            and recover a significant portion 
+                            of the business's profit potential.
+                        </p>
+                    </div>
+                    <div class="h-column">
+                        <div class="h-label">What the Data Said</div>
+                        <p>
+                            96.8% of orders above 20% discount 
+                            are loss-making. Implementing the cap 
+                            prevents 1,348 loss-making orders and 
+                            recovers $138,515 — 31.3% of total 
+                            profit potential. The West region 
+                            already operates at 10.9% average 
+                            discount and generates the highest 
+                            regional profit at $108,418, 
+                            proving the model is viable.
+                        </p>
+                    </div>
+                </div>
+                <div class="h-implication confirmed-implication">
+                    <strong>Recommendation:</strong> 
+                    Implement a system-enforced 20% discount 
+                    ceiling company-wide. Mandate the West 
+                    region's governance model across all regions. 
+                    Apply sub-category specific caps to Tables 
+                    and Bookcases immediately. This single 
+                    policy change moves the business from 
+                    64.7% to near 100% of its profit potential.
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <style>
+        /* ── HYPOTHESIS SECTION STYLES ──────────────────── */
+        .hypothesis-narrative {
+            background: rgba(79, 156, 249, 0.06);
+            border-left: 3px solid #4f9cf9;
+            border-radius: 0 12px 12px 0;
+            padding: 1.25rem 1.75rem;
+            margin-bottom: 3rem;
+            color: #9ca3af;
+            font-size: 1.05rem;
+            font-style: italic;
+        }
+
+        .hypothesis-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .hypothesis-card {
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 0;
+            border: 1px solid #2a2d3a;
+        }
+
+        .hypothesis-card.rejected {
+            background: linear-gradient(
+                135deg,
+                rgba(231, 76, 60, 0.06),
+                rgba(231, 76, 60, 0.02)
+            );
+            border-color: rgba(231, 76, 60, 0.2);
+        }
+
+        .hypothesis-card.confirmed {
+            background: linear-gradient(
+                135deg,
+                rgba(46, 204, 113, 0.08),
+                rgba(46, 204, 113, 0.02)
+            );
+            border-color: rgba(46, 204, 113, 0.3);
+        }
+
+        .h-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .h-number {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #6b7280;
+        }
+
+        .h-verdict {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0.3rem 0.9rem;
+            border-radius: 999px;
+        }
+
+        .rejected-tag {
+            background: rgba(231, 76, 60, 0.15);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .confirmed-tag {
+            background: rgba(46, 204, 113, 0.15);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .hypothesis-card h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            color: #f3f4f6;
+        }
+
+        .h-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 1.25rem;
+        }
+
+        @media (max-width: 680px) {
+            .h-body { grid-template-columns: 1fr; }
+        }
+
+        .h-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+
+        .h-column p {
+            font-size: 0.9rem;
+            color: #9ca3af;
+            line-height: 1.7;
+        }
+
+        .h-implication {
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            font-size: 0.875rem;
+            color: #d1d5db;
+            border-left: 2px solid #e74c3c;
+        }
+
+        .confirmed-implication {
+            border-left-color: #2ecc71;
+        }
+
+        /* ── FLOW CONNECTORS ──────────────────────────── */
+        .flow-connector {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 2rem;
+            margin: 0;
+        }
+
+        .connector-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                #2a2d3a,
+                transparent
+            );
+        }
+
+        .connector-text {
+            font-size: 0.8rem;
+            color: #4b5563;
+            font-style: italic;
+            text-align: center;
+            max-width: 300px;
+            flex-shrink: 0;
+        }
+    </style>
+
+    <!-- ── RECOMMENDATIONS ──────────────────────────────────────── -->
+<section id="recommendations">
+    <div class="section-label">Operational Recommendations</div>
+    <h2>What Should Happen Next</h2>
+    <p class="section-intro">
+        Every recommendation is grounded in a specific finding
+        with a quantified business case.
+    </p>
+
+    <div class="rec-grid">
+        <div class="rec-card">
+            <div class="priority">Priority 1 · Immediate</div>
+            <h4>Implement 20% System-Enforced Discount Cap</h4>
+            <p>Recovers $138,515 in annual profit by preventing 1,348
+               loss-making orders. Cap enforced at system level with
+               manager-override workflow for exceptions.</p>
+        </div>
+
+        <div class="rec-card">
+            <div class="priority">Priority 2 · 30 Days</div>
+            <h4>Audit West Region's Discount Governance Model</h4>
+            <p>West operates at 10.9% average discount vs 16% company
+               average. Their policy and approval framework should be
+               documented and mandated company-wide.</p>
+        </div>
+
+        <div class="rec-card">
+            <div class="priority">Priority 3 · 90 Days</div>
+            <h4>Sub-Category Caps: Tables & Bookcases</h4>
+            <p>Apply sub-category specific 20% cap to Tables (currently
+               26.1%) and Bookcases (21.1%). Monitor margin performance
+               over 90-day observation window.</p>
+        </div>
+
+        <div class="rec-card">
+            <div class="priority">Priority 4 · 180 Days</div>
+            <h4>Tables Discontinuation Review</h4>
+            <p>If Tables margin remains below 5% after cap implementation,
+               initiate formal pricing review. If still negative at
+               180 days, begin discontinuation planning.</p>
+        </div>
+
+        <div class="rec-card">
+            <div class="priority">Priority 5 · Strategic</div>
+            <h4>Shift Customer Mix Toward Home Office</h4>
+            <p>Home Office generates $407 profit per customer vs $328
+               for Consumer. Targeted acquisition of Home Office customers
+               improves margin quality without requiring volume growth.</p>
+        </div>
+
+        <div class="rec-card">
+            <div class="priority">Priority 6 · Strategic</div>
+            <h4>Central Region Demand Audit</h4>
+            <p>Central's average order margin is -10.4% — structurally
+               fragile despite positive total profit. Requires both
+               discount cap enforcement AND demand generation strategy.</p>
+        </div>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── AI COLLABORATION ──────────────────────────────────────── -->
+<section id="methodology">
+    <div class="section-label">How This Was Built</div>
+    <h2>Human Expertise + AI Acceleration</h2>
+    <p class="section-intro">
+        This EDA was not produced by AI. It was produced by
+        a business analyst using AI as an accelerant —
+        the difference matters.
+    </p>
+
+    <div class="collab-section">
+        <p style="color:#d1d5db; margin-bottom:0.5rem;">
+            The analysis was built through a Socratic collaboration
+            between domain expertise and technical execution.
+            Neither could have produced this alone at this speed.
+            Hypotheses were formed before code was written.
+            Errors were caught in both directions.
+            Every recommendation was challenged before it was accepted.
+        </p>
+
+        <div class="collab-grid">
+            <div class="collab-card">
+                <h4>The Analyst Brought</h4>
+                <ul>
+                    <li>Business question framing and direction</li>
+                    <li>Domain expertise in operations and BA</li>
+                    <li>Hypothesis generation and testing</li>
+                    <li>Error detection (correlation misattribution,
+                        chart misreading, calculation errors)</li>
+                    <li>Operational recommendations and policy design</li>
+                    <li>Judgement on when to pivot the analysis</li>
+                    <li>Staged intervention framework for Tables</li>
+                </ul>
+            </div>
+
+            <div class="collab-card">
+                <h4>AI Brought</h4>
+                <ul>
+                    <li>Python code for all 25+ chart cells</li>
+                    <li>Statistical methodology and framing</li>
+                    <li>Professional vocabulary for analyst instincts</li>
+                    <li>Error detection in reasoning and calculations</li>
+                    <li>Speed — weeks of Python learning compressed
+                        into hours of execution</li>
+                    <li>Cross-finding connections between BQs</li>
+                    <li>Presentation-ready language for findings</li>
+                </ul>
+            </div>
+        </div>
+
+        <p style="color:#9ca3af; font-size:0.9rem;
+                  margin-top:2rem; font-style:italic;">
+            "I ran a full professional EDA in a fraction of the time
+             it would have taken alone — not because AI replaced my
+             thinking, but because it freed me to do more of it."
+        </p>
+    </div>
+</section>
+
+<!-- ── FOOTER ────────────────────────────────────────────────── -->
+<footer>
+    <p>Built with Python · pandas · seaborn · matplotlib</p>
+    <p style="margin-top:0.5rem;">
+        Dataset:
+        <a href="https://www.kaggle.com/datasets/vivek468/superstore-dataset-final"
+           target="_blank">
+            Sample Superstore · Kaggle
+        </a>
+    </p>
+    <p style="margin-top:0.5rem; color:#374151;">
+        Analysis conducted through human-AI collaboration · 2025
+    </p>
+</footer>
+
+</body>
+</html>
